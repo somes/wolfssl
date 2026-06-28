@@ -395,6 +395,27 @@ impl SM2 {
         Ok(Self { key })
     }
 
+    /// Perform basic sanity checks on the SM2 key.
+    ///
+    /// # Returns
+    ///
+    /// Returns either Ok(SM2) containing the SM2 struct instance or Err(e)
+    /// containing the wolfSSL library error code value.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # extern crate std;
+    /// #[cfg(random)]
+    /// {
+    /// use wolfssl_wolfcrypt::random::RNG;
+    /// use wolfssl_wolfcrypt::sm2::SM2;
+    ///
+    /// let rng = RNG::new().expect("Failed to create RNG");
+    /// let mut sm2 = SM2::generate(&rng, SM2::FLAG_NONE).expect("Error with generate()");
+    /// sm2.check().expect("Error with check()");
+    /// }
+    /// ```
     pub fn check(&mut self) -> Result<(), i32> {
         self.key.check()
     }
