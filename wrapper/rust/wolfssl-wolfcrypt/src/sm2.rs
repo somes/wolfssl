@@ -787,6 +787,22 @@ impl SM2 {
     ///
     /// Returns either Ok(()) on success or Err(e) containing the wolfSSL
     /// library error code value.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// #[cfg(all(random, sm2_digest, sm3))]
+    /// {
+    /// use wolfssl_wolfcrypt::random::RNG;
+    /// use wolfssl_wolfcrypt::sm2::SM2;
+    ///
+    /// let rng = RNG::new().expect("Failed to create RNG");
+    /// let mut sm2 = SM2::generate(&rng, SM2::FLAG_NONE, None, None).expect("Error with generate()");
+    /// let mut digest = [0u8; 32];
+    /// sm2.create_digest(SM2::CERT_SIG_ID, b"message digest", SM2::HASH_TYPE_SM3, &mut digest).expect("Error creating SM2 digest");
+    /// assert_ne!(digest, [0u8; 32]);
+    /// }
+    /// ```
     #[cfg(sm2_digest)]
     pub fn create_digest(
         &mut self,
