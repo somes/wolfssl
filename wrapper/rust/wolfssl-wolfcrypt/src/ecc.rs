@@ -396,14 +396,9 @@ impl ECC {
     pub const FLAG_COFACTOR: i32 = sys::WC_ECC_FLAG_COFACTOR as i32;
     pub const FLAG_DEC_SIGN: i32 = sys::WC_ECC_FLAG_DEC_SIGN as i32;
 
-    /// Allocate and initialize an ECC key without populating key material.
-    pub(crate) fn new() -> Result<Self, i32> {
-        Self::new_ex(None, None)
-    }
-
     /// Allocate and initialize an ECC key without populating key material,
     /// using an optional heap hint and device ID.
-    pub(crate) fn new_ex(
+    pub(crate) fn new(
         heap: Option<*mut core::ffi::c_void>,
         dev_id: Option<i32>,
     ) -> Result<Self, i32> {

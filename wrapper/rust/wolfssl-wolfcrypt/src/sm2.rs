@@ -88,21 +88,42 @@ impl SM2 {
         self.key.set_shared_rng(rng)
     }
 
-    /// Generate a new SM2 key using the supplied random number generator.
+    /// Generate a new SM2 key with the given flags.
     ///
     /// # Parameters
     ///
-    /// * `rng`: Reference to an `RNG` struct to use for random number
+    /// * `rng`: Reference to a `RNG` struct to use for random number
     ///   generation while making the key.
     /// * `flags`: Flags for making the key.
+    /// * `heap`: Optional heap hint.
+    /// * `dev_id`: Optional device ID to use with crypto callbacks or async hardware.
     ///
     /// # Returns
     ///
-    /// Returns either Ok(SM2) containing the SM2 key or Err(e) containing
-    /// the wolfSSL library error code value.
-    #[cfg(random)]
-    pub fn generate(rng: &RNG, flags: i32) -> Result<Self, i32> {
-        let key = ECC::new()?;
+    /// Returns either Ok(SM2) containing the SM2 struct instance or Err(e)
+    /// containing the wolfSSL library error code value.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # extern crate std;
+    /// #[cfg(random)]
+    /// {
+    /// use wolfssl_wolfcrypt::random::RNG;
+    /// use wolfssl_wolfcrypt::sm2::SM2;
+    ///
+    /// let rng = RNG::new().expect("Failed to create RNG");
+    /// let mut sm2 = SM2::generate(&rng, SM2::FLAG_NONE, None, None).expect("Error with generate()");
+    /// sm2.check().expect("Error with check()");
+    /// }
+    /// ```
+    pub fn generate(
+        rng: &RNG,
+        flags: i32,
+        heap: Option<*mut core::ffi::c_void>,
+        dev_id: Option<i32>,
+    ) -> Result<Self, i32> {
+        let key = ECC::new(heap, dev_id)?;
         let rc = unsafe { sys::wc_ecc_sm2_make_key(rng.wc_rng, key.wc_ecc_key, flags) };
         if rc != 0 {
             return Err(rc);
@@ -225,7 +246,7 @@ impl SM2 {
     /// use wolfssl_wolfcrypt::sm2::SM2;
     ///
     /// let rng = RNG::new().expect("Failed to create RNG");
-    /// let mut sm2 = SM2::generate(&rng, SM2::FLAG_NONE).expect("Error with generate()");
+    /// let mut sm2 = SM2::generate(&rng, SM2::FLAG_NONE, None, None).expect("Error with generate()");
     /// let hash = [0x42u8; 32];
     /// let mut signature = [0u8; 128];
     /// let signature_length = sm2.sign_hash(&hash, &mut signature, &rng).expect("Error with sign_hash()");
@@ -328,7 +349,7 @@ impl SM2 {
     /// use wolfssl_wolfcrypt::sm2::SM2;
     ///
     /// let rng = RNG::new().expect("Failed to create RNG");
-    /// let mut sm2 = SM2::generate(&rng, SM2::FLAG_NONE).expect("Error with generate()");
+    /// let mut sm2 = SM2::generate(&rng, SM2::FLAG_NONE, None, None).expect("Error with generate()");
     /// let mut qx = [0u8; 32];
     /// let mut qx_len = 0u32;
     /// let mut qy = [0u8; 32];
@@ -378,7 +399,7 @@ impl SM2 {
     /// use wolfssl_wolfcrypt::sm2::SM2;
     ///
     /// let rng = RNG::new().expect("Failed to create RNG");
-    /// let mut sm2 = SM2::generate(&rng, SM2::FLAG_NONE).expect("Error with generate()");
+    /// let mut sm2 = SM2::generate(&rng, SM2::FLAG_NONE, None, None).expect("Error with generate()");
     /// let mut x963 = [0u8; 128];
     /// let x963_size = sm2.export_x963(&mut x963).expect("Error with export_x963()");
     /// let x963 = &x963[..x963_size];
@@ -412,7 +433,7 @@ impl SM2 {
     /// use wolfssl_wolfcrypt::sm2::SM2;
     ///
     /// let rng = RNG::new().expect("Failed to create RNG");
-    /// let mut sm2 = SM2::generate(&rng, SM2::FLAG_NONE).expect("Error with generate()");
+    /// let mut sm2 = SM2::generate(&rng, SM2::FLAG_NONE, None, None).expect("Error with generate()");
     /// sm2.check().expect("Error with check()");
     /// }
     /// ```
@@ -445,7 +466,7 @@ impl SM2 {
     /// use wolfssl_wolfcrypt::sm2::SM2;
     ///
     /// let rng = RNG::new().expect("Failed to create RNG");
-    /// let mut sm2 = SM2::generate(&rng, SM2::FLAG_NONE).expect("Error with generate()");
+    /// let mut sm2 = SM2::generate(&rng, SM2::FLAG_NONE, None, None).expect("Error with generate()");
     /// let mut qx = [0u8; 32];
     /// let mut qx_len = 0u32;
     /// let mut qy = [0u8; 32];
@@ -496,7 +517,7 @@ impl SM2 {
     /// use wolfssl_wolfcrypt::sm2::SM2;
     ///
     /// let rng = RNG::new().expect("Failed to create RNG");
-    /// let mut sm2 = SM2::generate(&rng, SM2::FLAG_NONE).expect("Error with generate()");
+    /// let mut sm2 = SM2::generate(&rng, SM2::FLAG_NONE, None, None).expect("Error with generate()");
     /// let mut qx = [0u8; 32];
     /// let mut qx_len = 0u32;
     /// let mut qy = [0u8; 32];
@@ -541,7 +562,7 @@ impl SM2 {
     /// use wolfssl_wolfcrypt::sm2::SM2;
     ///
     /// let rng = RNG::new().expect("Failed to create RNG");
-    /// let mut sm2 = SM2::generate(&rng, SM2::FLAG_NONE).expect("Error with generate()");
+    /// let mut sm2 = SM2::generate(&rng, SM2::FLAG_NONE, None, None).expect("Error with generate()");
     /// let mut d = [0u8; 32];
     /// let d_size = sm2.export_private(&mut d).expect("Error with export_private()");
     /// assert_eq!(d_size, 32);
@@ -575,7 +596,7 @@ impl SM2 {
     /// use wolfssl_wolfcrypt::sm2::SM2;
     ///
     /// let rng = RNG::new().expect("Failed to create RNG");
-    /// let mut sm2 = SM2::generate(&rng, SM2::FLAG_NONE).expect("Error with generate()");
+    /// let mut sm2 = SM2::generate(&rng, SM2::FLAG_NONE, None, None).expect("Error with generate()");
     /// let mut qx = [0u8; 32];
     /// let mut qx_len = 0u32;
     /// let mut qy = [0u8; 32];
@@ -614,7 +635,7 @@ impl SM2 {
     /// use wolfssl_wolfcrypt::sm2::SM2;
     ///
     /// let rng = RNG::new().expect("Failed to create RNG");
-    /// let mut sm2 = SM2::generate(&rng, SM2::FLAG_NONE).expect("Error with generate()");
+    /// let mut sm2 = SM2::generate(&rng, SM2::FLAG_NONE, None, None).expect("Error with generate()");
     /// let mut x963 = [0u8; 128];
     /// let _x963_size = sm2.export_x963(&mut x963).expect("Error with export_x963()");
     /// }
@@ -644,7 +665,7 @@ impl SM2 {
     /// use wolfssl_wolfcrypt::sm2::SM2;
     ///
     /// let rng = RNG::new().expect("Failed to create RNG");
-    /// let mut sm2 = SM2::generate(&rng, SM2::FLAG_NONE).expect("Error with generate()");
+    /// let mut sm2 = SM2::generate(&rng, SM2::FLAG_NONE, None, None).expect("Error with generate()");
     /// let mut x963 = [0u8; 128];
     /// let _x963_size = sm2.export_x963_compressed(&mut x963).expect("Error with export_x963_compressed()");
     /// }
