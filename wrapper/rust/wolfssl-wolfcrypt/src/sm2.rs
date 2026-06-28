@@ -54,40 +54,6 @@ impl SM2 {
     /// Enable the ECC decrypt/sign flag.
     pub const FLAG_DEC_SIGN: i32 = ECC::FLAG_DEC_SIGN;
 
-    /// Bind an owned random number generator to this key for ECC operations
-    /// that require blinding.
-    ///
-    /// # Parameters
-    ///
-    /// * `rng`: The `RNG` struct instance to associate with this `SM2`
-    ///   instance.
-    ///
-    /// # Returns
-    ///
-    /// Returns Ok(()) on success or Err(e) containing the wolfSSL library
-    /// error code value.
-    #[cfg(random)]
-    pub fn set_rng(&mut self, rng: RNG) -> Result<(), i32> {
-        self.key.set_rng(rng)
-    }
-
-    /// Bind a shared random number generator to this key for ECC operations
-    /// that require blinding. Available when the `alloc` feature is enabled.
-    ///
-    /// # Parameters
-    ///
-    /// * `rng`: The reference-counted `RNG` struct instance to associate with
-    ///   this `SM2` instance.
-    ///
-    /// # Returns
-    ///
-    /// Returns Ok(()) on success or Err(e) containing the wolfSSL library
-    /// error code value.
-    #[cfg(all(random, feature = "alloc"))]
-    pub fn set_shared_rng(&mut self, rng: alloc::rc::Rc<RNG>) -> Result<(), i32> {
-        self.key.set_shared_rng(rng)
-    }
-
     /// Generate a new SM2 key with the given flags.
     ///
     /// # Parameters
@@ -707,6 +673,51 @@ impl SM2 {
     #[cfg(random)]
     pub fn make_pub(&mut self, rng: Option<&RNG>) -> Result<(), i32> {
         self.key.make_pub(rng)
+    }
+
+    /// Bind an owned `RNG` to this key.
+    ///
+    /// # Parameters
+    ///
+    /// * `rng`: The `RNG` struct instance to associate with this `SM2`
+    ///   instance.
+    ///
+    /// # Returns
+    ///
+    /// Returns Ok(()) on success or Err(e) containing the wolfSSL library
+    /// error code value.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # extern crate std;
+    /// #[cfg(random)]
+    /// {
+    /// use wolfssl_wolfcrypt::random::RNG;
+    /// use wolfssl_wolfcrypt::sm2::SM2;
+    ///
+    /// let blinding_rng = RNG::new().expect("Failed to create RNG");
+    /// let key_gen_rng = RNG::new().expect("Failed to create RNG");
+    /// let mut sm2 = SM2::generate(&key_gen_rng, SM2::FLAG_NONE, None, None).expect("Error with generate()");
+    /// sm2.set_rng(blinding_rng).expect("Error with set_rng()");
+    /// }
+    /// ```
+    #[cfg(random)]
+    pub fn set_rng(&mut self, rng: RNG) -> Result<(), i32> {
+        self.key.set_rng(rng)
+    }
+
+    /// Bind a shared `RNG` to this key. Available when the `alloc` feature
+    /// is enabled.
+    #[cfg(all(random, feature = "alloc"))]
+    pub fn set_shared_rng(&mut self, rng: alloc::rc::Rc<RNG>) -> Result<(), i32> {
+        self.key.set_shared_rng(rng)
+    }
+
+    /// Borrow the RNG previously bound via `set_rng` or `set_shared_rng`.
+    #[cfg(random)]
+    pub fn rng(&self) -> Option<&RNG> {
+        self.key.rng()
     }
 
     /// Derive a shared secret into the caller-supplied output buffer.
