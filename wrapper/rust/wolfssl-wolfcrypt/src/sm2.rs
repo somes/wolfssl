@@ -552,6 +552,37 @@ impl SM2 {
         self.key.export_private(d)
     }
 
+    /// Export public SM2 key components in binary unsigned integer format.
+    ///
+    /// # Parameters
+    ///
+    /// * `qx`: Buffer in which to store public X component.
+    /// * `qx_len`: Output parameter storing number of bytes written to `qx`.
+    /// * `qy`: Buffer in which to store public Y component.
+    /// * `qy_len`: Output parameter storing number of bytes written to `qy`.
+    ///
+    /// # Returns
+    ///
+    /// Returns either Ok(()) or Err(e) containing the wolfSSL library error
+    /// code value.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// #[cfg(all(random, ecc_export))]
+    /// {
+    /// use wolfssl_wolfcrypt::random::RNG;
+    /// use wolfssl_wolfcrypt::sm2::SM2;
+    ///
+    /// let rng = RNG::new().expect("Failed to create RNG");
+    /// let mut sm2 = SM2::generate(&rng, SM2::FLAG_NONE).expect("Error with generate()");
+    /// let mut qx = [0u8; 32];
+    /// let mut qx_len = 0u32;
+    /// let mut qy = [0u8; 32];
+    /// let mut qy_len = 0u32;
+    /// sm2.export_public(&mut qx, &mut qx_len, &mut qy, &mut qy_len).expect("Error with export_public()");
+    /// }
+    /// ```
     #[cfg(ecc_export)]
     pub fn export_public(
         &mut self,
