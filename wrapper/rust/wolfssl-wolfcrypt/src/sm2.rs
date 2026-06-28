@@ -251,6 +251,45 @@ impl SM2 {
         Ok(Self { key })
     }
 
+    /// Import raw SM2 key from components in hexadecimal ASCII string format.
+    ///
+    /// The key is imported using the SM2P256V1 curve.
+    ///
+    /// # Parameters
+    ///
+    /// * `qx`: X component of public key as null terminated ASCII hex string.
+    /// * `qy`: Y component of public key as null terminated ASCII hex string.
+    /// * `d`: Private key as null terminated ASCII hex string.
+    /// * `heap`: Optional heap hint.
+    /// * `dev_id`: Optional device ID to use with crypto callbacks or async hardware.
+    ///
+    /// # Returns
+    ///
+    /// Returns either Ok(SM2) containing the SM2 struct instance or Err(e)
+    /// containing the wolfSSL library error code value.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// #[cfg(all(ecc_import, ecc_curve_sm2p256v1))]
+    /// {
+    /// use wolfssl_wolfcrypt::sm2::SM2;
+    ///
+    /// // ECC key
+    /// let qx = b"7a4e287890a1a47ad3457e52f2f76a83ce46cbc947616d0cbaa82323818a793d\0";
+    /// let qy = b"eec4084f5b29ebf29c44cce3b3059610922f8b30ea6e8811742ac7238fe87308\0";
+    /// let d  = b"8c14b793cb19137e323a6d2e2a870bca2e7a493ec1153b3a95feb8a4873f8d08\0";
+    /// let mut key = SM2::import_raw(qx, qy, d, None, None).expect("Error with import_raw()");
+    /// assert!(key.check().is_err());
+    ///
+    /// // SM2 key from `certs/sm2/client-sm2-priv.pem`.
+    /// let qx = b"3a1de8cb4bd32e3f4b073fb021fec59ed9ca3a939395761d30d90bf556ed1960\0";
+    /// let qy = b"ed014cf6671df1aca8740db277c84938e4ff4cef8d6d87f64ec7f839747070b5\0";
+    /// let d  = b"d0a2df497a2ddf02c9ceb7f237020dddfc08b8de14937a532649d5fe02d9f371\0";
+    /// let mut key = SM2::import_raw(qx, qy, d, None, None).expect("Error with import_raw()");
+    /// assert!(key.check().is_ok());
+    /// }
+    /// ```
     #[cfg(all(ecc_import, ecc_curve_sm2p256v1))]
     pub fn import_raw(
         qx: &[u8],
