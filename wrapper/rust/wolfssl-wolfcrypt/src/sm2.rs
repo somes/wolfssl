@@ -832,19 +832,35 @@ impl SM2 {
         Ok(())
     }
 
-    /// Sign a hash with this SM2 key and return the DER signature length.
+    /// Sign a message digest using the SM2 key.
     ///
     /// # Parameters
     ///
     /// * `hash`: Message digest to sign.
-    /// * `signature`: Buffer in which to store the DER-encoded signature.
-    /// * `rng`: Random number generator used while signing.
+    /// * `signature`: Buffer in which to store the signature.
+    /// * `rng`: RNG struct to use for random number generation during signing.
     ///
     /// # Returns
     ///
     /// Returns either Ok(size) containing the number of bytes written to
     /// `signature` or Err(e) containing the wolfSSL library error code value.
-    #[cfg(all(sm2_sign, random))]
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// #[cfg(all(random, sm2_sign))]
+    /// {
+    /// use wolfssl_wolfcrypt::random::RNG;
+    /// use wolfssl_wolfcrypt::sm2::SM2;
+    ///
+    /// let rng = RNG::new().expect("Failed to create RNG");
+    /// let mut sm2 = SM2::generate(&rng, SM2::FLAG_NONE, None, None).expect("Error with generate()");
+    /// let hash = [0x42u8; 32];
+    /// let mut signature = [0u8; 73];
+    /// sm2.sign_hash(&hash, &mut signature, &rng).expect("Error with sign_hash()");
+    /// }
+    /// ```
+    #[cfg(all(random, sm2_sign))]
     pub fn sign_hash(
         &mut self,
         hash: &[u8],
