@@ -720,25 +720,51 @@ impl SM2 {
         self.key.rng()
     }
 
-    /// Derive a shared secret into the caller-supplied output buffer.
+    /// Compute the SM2 shared secret using this key's private component
+    /// and the peer public key.
     ///
     /// # Parameters
     ///
-    /// * `peer`: Peer `SM2` key containing the public component.
-    /// * `out`: Buffer in which to store the computed secret value.
+    /// * `peer`: `SM2` public key.
+    /// * `dout`: Buffer in which to store the computed secret value.
     ///
     /// # Returns
     ///
     /// Returns either Ok(size) containing the number of bytes written to
-    /// `out` or Err(e) containing the wolfSSL library error code value.
+    /// `dout` or Err(e) containing the wolfSSL library error code value.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// #[cfg(all(random, sm2_dh, feature = "alloc"))]
+    /// {
+    /// use std::rc::Rc;
+    /// use wolfssl_wolfcrypt::random::RNG;
+    /// use wolfssl_wolfcrypt::sm2::SM2;
+    ///
+    /// let rng = Rc::new(RNG::new().expect("Failed to create RNG"));
+    /// let mut alice = SM2::generate(&rng, SM2::FLAG_NONE, None, None).expect("Error with generate()");
+    /// let mut bob = SM2::generate(&rng, SM2::FLAG_NONE, None, None).expect("Error with generate()");
+    /// alice.set_shared_rng(Rc::clone(&rng)).expect("Error with set_shared_rng()");
+    /// bob.set_shared_rng(Rc::clone(&rng)).expect("Error with set_shared_rng()");
+    /// let mut alice_secret = [0u8; SM2::KEY_SIZE];
+    /// let mut bob_secret = [0u8; SM2::KEY_SIZE];
+    /// let alice_len = alice.shared_secret(&mut bob, &mut alice_secret).expect("Error with shared_secret()");
+    /// let bob_len = bob.shared_secret(&mut alice, &mut bob_secret).expect("Error with shared_secret()");
+    /// assert!(alice_len > 0 && alice_len <= SM2::KEY_SIZE);
+    /// assert!(bob_len > 0 && bob_len <= SM2::KEY_SIZE);
+    /// assert_eq!(alice_len, bob_len);
+    /// assert_eq!(alice_secret[..alice_len], bob_secret[..bob_len]);
+    /// }
+    /// ```
     #[cfg(sm2_dh)]
-    pub fn shared_secret(&mut self, peer: &mut SM2, out: &mut [u8]) -> Result<usize, i32> {
-        let mut out_len = crate::buffer_len_to_u32(out.len())?;
+    pub fn shared_secret(&mut self, peer: &mut SM2, dout: &mut [u8]) -> Result<usize, i32> {
+        let mut out_len = crate::buffer_len_to_u32(dout.len())?;
         let rc = unsafe {
             sys::wc_ecc_sm2_shared_secret(
                 self.key.wc_ecc_key,
                 peer.key.wc_ecc_key,
-                out.as_mut_ptr(),
+                dout.as_mut_ptr(),
                 &mut out_len,
             )
         };
