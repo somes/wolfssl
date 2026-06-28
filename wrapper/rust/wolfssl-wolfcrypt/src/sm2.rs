@@ -654,6 +654,35 @@ impl SM2 {
         self.key.export_x963_compressed(dout)
     }
 
+    /// Compute the public component from this key private component.
+    ///
+    /// # Parameters
+    ///
+    /// * `rng`: RNG struct used to blind the private key value used in the
+    ///   computation.
+    ///
+    /// # Returns
+    ///
+    /// Returns either Ok(()) or Err(e) containing the wolfSSL library error
+    /// code value.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # extern crate std;
+    /// #[cfg(random)]
+    /// {
+    /// use std::fs;
+    /// use wolfssl_wolfcrypt::random::RNG;
+    /// use wolfssl_wolfcrypt::sm2::SM2;
+    ///
+    /// let rng = RNG::new().expect("Failed to create RNG");
+    /// let key_path = "../../../certs/sm2/client-sm2-priv.der";
+    /// let der: Vec<u8> = fs::read(key_path).expect("Error reading key file");
+    /// let mut sm2 = SM2::import_der(&der, None, None).expect("Error with import_der()");
+    /// sm2.make_pub(Some(&rng)).expect("Error with make_pub()");
+    /// }
+    /// ```
     #[cfg(random)]
     pub fn make_pub(&mut self, rng: Option<&RNG>) -> Result<(), i32> {
         self.key.make_pub(rng)
