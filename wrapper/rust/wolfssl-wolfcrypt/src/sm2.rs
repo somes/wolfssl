@@ -594,6 +594,31 @@ impl SM2 {
         self.key.export_public(qx, qx_len, qy, qy_len)
     }
 
+    /// Export public key in ANSI X9.63 format.
+    ///
+    /// # Parameters
+    ///
+    /// * `dout`: Buffer to contain the output.
+    ///
+    /// # Returns
+    ///
+    /// Returns either Ok(size) containing the number of bytes written to
+    /// `dout` or Err(e) containing the wolfSSL library error code value.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// #[cfg(all(random, ecc_export))]
+    /// {
+    /// use wolfssl_wolfcrypt::random::RNG;
+    /// use wolfssl_wolfcrypt::sm2::SM2;
+    ///
+    /// let rng = RNG::new().expect("Failed to create RNG");
+    /// let mut sm2 = SM2::generate(&rng, SM2::FLAG_NONE).expect("Error with generate()");
+    /// let mut x963 = [0u8; 128];
+    /// let _x963_size = sm2.export_x963(&mut x963).expect("Error with export_x963()");
+    /// }
+    /// ```
     #[cfg(ecc_export)]
     pub fn export_x963(&mut self, dout: &mut [u8]) -> Result<usize, i32> {
         self.key.export_x963(dout)
