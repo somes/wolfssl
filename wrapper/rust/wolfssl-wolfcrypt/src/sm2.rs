@@ -130,12 +130,15 @@ impl SM2 {
     ///
     /// ```rust
     /// # extern crate std;
+    /// #[cfg(ecc_curve_sm2p256v1)]
+    /// {
     /// use wolfssl_wolfcrypt::sm2::SM2;
     /// use std::fs;
     ///
     /// let key_path = "../../../certs/sm2/client-sm2-priv.der";
     /// let der: Vec<u8> = fs::read(key_path).expect("Error reading key file");
     /// let mut sm2 = SM2::import_der(&der, None, None).expect("Error with import_der()");
+    /// }
     /// ```
     #[cfg(ecc_curve_sm2p256v1)]
     pub fn import_der(
@@ -170,12 +173,15 @@ impl SM2 {
     ///
     /// ```rust
     /// # extern crate std;
+    /// #[cfg(ecc_curve_sm2p256v1)]
+    /// {
     /// use wolfssl_wolfcrypt::sm2::SM2;
     /// use std::fs;
     ///
     /// let key_path = "../../../certs/sm2/client-sm2-key.der";
     /// let der: Vec<u8> = fs::read(key_path).expect("Error reading key file");
     /// let mut sm2 = SM2::import_public_der(&der, None, None).expect("Error with import_public_der()");
+    /// }
     /// ```
     #[cfg(ecc_curve_sm2p256v1)]
     pub fn import_public_der(
@@ -190,6 +196,50 @@ impl SM2 {
         Ok(Self { key })
     }
 
+    /// Import a public/private SM2 key pair from a buffer containing the raw
+    /// private key and a second buffer containing the ANSI X9.63 formatted
+    /// public key. This function handles both compressed and uncompressed
+    /// keys as long as wolfSSL is built with the HAVE_COMP_KEY build option
+    /// enabled.
+    ///
+    /// The key is imported using the SM2P256V1 curve.
+    ///
+    /// # Parameters
+    ///
+    /// * `priv_buf`: Buffer containing the raw private key.
+    /// * `pub_buf`: Buffer containing the ANSI X9.63 formatted public key.
+    /// * `heap`: Optional heap hint.
+    /// * `dev_id`: Optional device ID to use with crypto callbacks or async hardware.
+    ///
+    /// # Returns
+    ///
+    /// Returns either Ok(SM2) containing the SM2 struct instance or Err(e)
+    /// containing the wolfSSL library error code value.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// #[cfg(all(random, ecc_import, ecc_curve_sm2p256v1))]
+    /// {
+    /// use wolfssl_wolfcrypt::random::RNG;
+    /// use wolfssl_wolfcrypt::sm2::SM2;
+    ///
+    /// let rng = RNG::new().expect("Failed to create RNG");
+    /// let mut sm2 = SM2::generate(&rng, SM2::FLAG_NONE).expect("Error with generate()");
+    /// let hash = [0x42u8; 32];
+    /// let mut signature = [0u8; 128];
+    /// let signature_length = sm2.sign_hash(&hash, &mut signature, &rng).expect("Error with sign_hash()");
+    /// let signature = &signature[..signature_length];
+    /// let mut d = [0u8; 32];
+    /// let d_size = sm2.export_private(&mut d).expect("Error with export_private()");
+    /// let mut x963 = [0u8; 128];
+    /// let x963_size = sm2.export_x963(&mut x963).expect("Error with export_x963()");
+    /// let x963 = &x963[..x963_size];
+    /// let mut key2 = SM2::import_private_key(&d, x963, None, None).expect("Error with import_private_key()");
+    /// let valid = key2.verify_hash(&signature, &hash).expect("Error with verify_hash()");
+    /// assert_eq!(valid, true);
+    /// }
+    /// ```
     #[cfg(all(ecc_import, ecc_curve_sm2p256v1))]
     pub fn import_private_key(
         priv_buf: &[u8],
