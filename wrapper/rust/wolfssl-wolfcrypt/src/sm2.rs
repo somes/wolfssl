@@ -110,6 +110,194 @@ impl SM2 {
         Ok(Self { key })
     }
 
+    /// Import public and private SM2 key pair from DER input buffer.
+    ///
+    /// The decoded key must use the SM2P256V1 curve. Keys using any other
+    /// ECC curve are rejected with `ECC_CURVE_OID_E`.
+    ///
+    /// # Parameters
+    ///
+    /// * `der`: DER buffer containing the ECC public and private key pair.
+    /// * `heap`: Optional heap hint.
+    /// * `dev_id`: Optional device ID to use with crypto callbacks or async hardware.
+    ///
+    /// # Returns
+    ///
+    /// Returns either Ok(SM2) containing the SM2 struct instance or Err(e)
+    /// containing the wolfSSL library error code value.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # extern crate std;
+    /// use wolfssl_wolfcrypt::sm2::SM2;
+    /// use std::fs;
+    ///
+    /// let key_path = "../../../certs/sm2/client-sm2-priv.der";
+    /// let der: Vec<u8> = fs::read(key_path).expect("Error reading key file");
+    /// let mut sm2 = SM2::import_der(&der, None, None).expect("Error with import_der()");
+    /// ```
+    #[cfg(ecc_curve_sm2p256v1)]
+    pub fn import_der(
+        der: &[u8],
+        heap: Option<*mut core::ffi::c_void>,
+        dev_id: Option<i32>,
+    ) -> Result<Self, i32> {
+        let key = ECC::import_der(der, heap, dev_id)?;
+        if key.curve_id()? != ECC::SM2P256V1 {
+            return Err(sys::wolfCrypt_ErrorCodes_ECC_CURVE_OID_E);
+        }
+        Ok(Self { key })
+    }
+
+    /// Import public SM2 key from DER input buffer.
+    ///
+    /// The decoded key must use the SM2P256V1 curve. Keys using any other
+    /// ECC curve are rejected with `ECC_CURVE_OID_E`.
+    ///
+    /// # Parameters
+    ///
+    /// * `der`: DER buffer containing the SM2 public key.
+    /// * `heap`: Optional heap hint.
+    /// * `dev_id`: Optional device ID to use with crypto callbacks or async hardware.
+    ///
+    /// # Returns
+    ///
+    /// Returns either Ok(SM2) containing the SM2 struct instance or Err(e)
+    /// containing the wolfSSL library error code value.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # extern crate std;
+    /// use wolfssl_wolfcrypt::sm2::SM2;
+    /// use std::fs;
+    ///
+    /// let key_path = "../../../certs/sm2/client-sm2-key.der";
+    /// let der: Vec<u8> = fs::read(key_path).expect("Error reading key file");
+    /// let mut sm2 = SM2::import_public_der(&der, None, None).expect("Error with import_public_der()");
+    /// ```
+    #[cfg(ecc_curve_sm2p256v1)]
+    pub fn import_public_der(
+        der: &[u8],
+        heap: Option<*mut core::ffi::c_void>,
+        dev_id: Option<i32>,
+    ) -> Result<Self, i32> {
+        let key = ECC::import_public_der(der, heap, dev_id)?;
+        if key.curve_id()? != ECC::SM2P256V1 {
+            return Err(sys::wolfCrypt_ErrorCodes_ECC_CURVE_OID_E);
+        }
+        Ok(Self { key })
+    }
+
+    #[cfg(all(ecc_import, ecc_curve_sm2p256v1))]
+    pub fn import_private_key(
+        priv_buf: &[u8],
+        pub_buf: &[u8],
+        heap: Option<*mut core::ffi::c_void>,
+        dev_id: Option<i32>,
+    ) -> Result<Self, i32> {
+        let key = ECC::import_private_key_ex(priv_buf, pub_buf, ECC::SM2P256V1, heap, dev_id)?;
+        Ok(Self { key })
+    }
+
+    #[cfg(all(ecc_import, ecc_curve_sm2p256v1))]
+    pub fn import_raw(
+        qx: &[u8],
+        qy: &[u8],
+        d: &[u8],
+        heap: Option<*mut core::ffi::c_void>,
+        dev_id: Option<i32>,
+    ) -> Result<Self, i32> {
+        let key = ECC::import_raw_ex(qx, qy, d, ECC::SM2P256V1, heap, dev_id)?;
+        Ok(Self { key })
+    }
+
+    #[cfg(all(ecc_import, ecc_curve_sm2p256v1))]
+    pub fn import_unsigned(
+        qx: &[u8],
+        qy: &[u8],
+        d: &[u8],
+        heap: Option<*mut core::ffi::c_void>,
+        dev_id: Option<i32>,
+    ) -> Result<Self, i32> {
+        let key = ECC::import_unsigned(qx, qy, d, ECC::SM2P256V1, heap, dev_id)?;
+        Ok(Self { key })
+    }
+
+    #[cfg(all(ecc_import, ecc_curve_sm2p256v1))]
+    pub fn import_x963(
+        din: &[u8],
+        heap: Option<*mut core::ffi::c_void>,
+        dev_id: Option<i32>,
+    ) -> Result<Self, i32> {
+        let key = ECC::import_x963_ex(din, ECC::SM2P256V1, heap, dev_id)?;
+        Ok(Self { key })
+    }
+
+    pub fn check(&mut self) -> Result<(), i32> {
+        self.key.check()
+    }
+
+    #[cfg(ecc_import)]
+    pub fn export(
+        &mut self,
+        qx: &mut [u8],
+        qx_len: &mut u32,
+        qy: &mut [u8],
+        qy_len: &mut u32,
+        d: &mut [u8],
+        d_len: &mut u32,
+    ) -> Result<(), i32> {
+        self.key.export(qx, qx_len, qy, qy_len, d, d_len)
+    }
+
+    #[cfg(ecc_import)]
+    #[allow(clippy::too_many_arguments)]
+    pub fn export_ex(
+        &mut self,
+        qx: &mut [u8],
+        qx_len: &mut u32,
+        qy: &mut [u8],
+        qy_len: &mut u32,
+        d: &mut [u8],
+        d_len: &mut u32,
+        hex: bool,
+    ) -> Result<(), i32> {
+        self.key.export_ex(qx, qx_len, qy, qy_len, d, d_len, hex)
+    }
+
+    #[cfg(ecc_export)]
+    pub fn export_private(&mut self, d: &mut [u8]) -> Result<usize, i32> {
+        self.key.export_private(d)
+    }
+
+    #[cfg(ecc_export)]
+    pub fn export_public(
+        &mut self,
+        qx: &mut [u8],
+        qx_len: &mut u32,
+        qy: &mut [u8],
+        qy_len: &mut u32,
+    ) -> Result<(), i32> {
+        self.key.export_public(qx, qx_len, qy, qy_len)
+    }
+
+    #[cfg(ecc_export)]
+    pub fn export_x963(&mut self, dout: &mut [u8]) -> Result<usize, i32> {
+        self.key.export_x963(dout)
+    }
+
+    #[cfg(all(ecc_export, ecc_comp_key))]
+    pub fn export_x963_compressed(&mut self, dout: &mut [u8]) -> Result<usize, i32> {
+        self.key.export_x963_compressed(dout)
+    }
+
+    #[cfg(random)]
+    pub fn make_pub(&mut self, rng: Option<&RNG>) -> Result<(), i32> {
+        self.key.make_pub(rng)
+    }
+
     /// Derive a shared secret into the caller-supplied output buffer.
     ///
     /// # Parameters
