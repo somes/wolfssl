@@ -417,6 +417,15 @@ impl ECC {
         })
     }
 
+    pub(crate) fn curve_id(&self) -> Result<i32, i32> {
+        let curve_idx = unsafe { (*self.wc_ecc_key).idx };
+        let rc = unsafe { sys::wc_ecc_get_curve_id(curve_idx) };
+        if rc < 0 {
+            return Err(rc);
+        }
+        Ok(rc)
+    }
+
     /// Allocate and initialize a new `sys::ecc_key` on the C heap.
     fn new_ecc_key(heap: *mut core::ffi::c_void, dev_id: i32) -> Result<*mut sys::ecc_key, i32> {
         let key = unsafe { sys::wc_ecc_key_new(heap) };
