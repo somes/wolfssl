@@ -468,6 +468,44 @@ impl SM2 {
         self.key.export(qx, qx_len, qy, qy_len, d, d_len)
     }
 
+    /// Export SM2 key components as either ASCII hexadecimal strings or
+    /// in binary unsigned integer format.
+    ///
+    /// # Parameters
+    ///
+    /// * `qx`: Buffer in which to store public X component.
+    /// * `qx_len`: Output parameter storing number of bytes written to `qx`.
+    /// * `qy`: Buffer in which to store public Y component.
+    /// * `qy_len`: Output parameter storing number of bytes written to `qy`.
+    /// * `d`: Buffer in which to store private component.
+    /// * `d_len`: Output parameter storing number of bytes written to `d`.
+    /// * `hex`: true to output in ASCII hexadecimal string, false to output
+    ///   as binary data.
+    ///
+    /// # Returns
+    ///
+    /// Returns either Ok(()) or Err(e) containing the wolfSSL library error
+    /// code value.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// #[cfg(all(random, ecc_import))]
+    /// {
+    /// use wolfssl_wolfcrypt::random::RNG;
+    /// use wolfssl_wolfcrypt::sm2::SM2;
+    ///
+    /// let rng = RNG::new().expect("Failed to create RNG");
+    /// let mut sm2 = SM2::generate(&rng, SM2::FLAG_NONE).expect("Error with generate()");
+    /// let mut qx = [0u8; 32];
+    /// let mut qx_len = 0u32;
+    /// let mut qy = [0u8; 32];
+    /// let mut qy_len = 0u32;
+    /// let mut d = [0u8; 32];
+    /// let mut d_len = 0u32;
+    /// sm2.export_ex(&mut qx, &mut qx_len, &mut qy, &mut qy_len, &mut d, &mut d_len, false).expect("Error with export_ex()");
+    /// }
+    /// ```
     #[cfg(ecc_import)]
     #[allow(clippy::too_many_arguments)]
     pub fn export_ex(
