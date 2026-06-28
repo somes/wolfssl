@@ -302,6 +302,43 @@ impl SM2 {
         Ok(Self { key })
     }
 
+    /// Import raw SM2 key from components in binary unsigned integer format.
+    ///
+    /// The key is imported using the SM2P256V1 curve.
+    ///
+    /// # Parameters
+    ///
+    /// * `qx`: X component of public key in binary unsigned integer format.
+    /// * `qy`: Y component of public key in binary unsigned integer format.
+    /// * `d`: Private key in binary unsigned integer format.
+    /// * `heap`: Optional heap hint.
+    /// * `dev_id`: Optional device ID to use with crypto callbacks or async hardware.
+    ///
+    /// # Returns
+    ///
+    /// Returns either Ok(SM2) containing the SM2 struct instance or Err(e)
+    /// containing the wolfSSL library error code value.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// #[cfg(all(random, ecc_import, ecc_curve_sm2p256v1))]
+    /// {
+    /// use wolfssl_wolfcrypt::random::RNG;
+    /// use wolfssl_wolfcrypt::sm2::SM2;
+    ///
+    /// let rng = RNG::new().expect("Failed to create RNG");
+    /// let mut sm2 = SM2::generate(&rng, SM2::FLAG_NONE).expect("Error with generate()");
+    /// let mut qx = [0u8; 32];
+    /// let mut qx_len = 0u32;
+    /// let mut qy = [0u8; 32];
+    /// let mut qy_len = 0u32;
+    /// let mut d = [0u8; 32];
+    /// let mut d_len = 0u32;
+    /// sm2.export_ex(&mut qx, &mut qx_len, &mut qy, &mut qy_len, &mut d, &mut d_len, false).expect("Error with export_ex()");
+    /// let mut key2 = SM2::import_unsigned(&qx, &qy, &d, None, None).expect("Error with import_unsigned()");
+    /// }
+    /// ```
     #[cfg(all(ecc_import, ecc_curve_sm2p256v1))]
     pub fn import_unsigned(
         qx: &[u8],
