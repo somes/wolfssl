@@ -351,6 +351,40 @@ impl SM2 {
         Ok(Self { key })
     }
 
+    /// Import a public SM2 key from the given buffer containing the key stored
+    /// in ANSI X9.63 format. This function handles both compressed and
+    /// uncompressed keys, as long as compressed keys are enabled at compile
+    /// time with the HAVE_COMP_KEY build option.
+    ///
+    /// The key is imported using the SM2P256V1 curve.
+    ///
+    /// # Parameters
+    ///
+    /// * `din`: Buffer containing the SM2 key encoded in ANSI X9.63 format.
+    /// * `heap`: Optional heap hint.
+    /// * `dev_id`: Optional device ID to use with crypto callbacks or async hardware.
+    ///
+    /// # Returns
+    ///
+    /// Returns either Ok(SM2) containing the SM2 struct instance or Err(e)
+    /// containing the wolfSSL library error code value.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// #[cfg(all(random, ecc_import, ecc_curve_sm2p256v1))]
+    /// {
+    /// use wolfssl_wolfcrypt::random::RNG;
+    /// use wolfssl_wolfcrypt::sm2::SM2;
+    ///
+    /// let rng = RNG::new().expect("Failed to create RNG");
+    /// let mut sm2 = SM2::generate(&rng, SM2::FLAG_NONE).expect("Error with generate()");
+    /// let mut x963 = [0u8; 128];
+    /// let x963_size = sm2.export_x963(&mut x963).expect("Error with export_x963()");
+    /// let x963 = &x963[..x963_size];
+    /// let _key2 = SM2::import_x963(x963, None, None).expect("Error with import_x963()");
+    /// }
+    /// ```
     #[cfg(all(ecc_import, ecc_curve_sm2p256v1))]
     pub fn import_x963(
         din: &[u8],
