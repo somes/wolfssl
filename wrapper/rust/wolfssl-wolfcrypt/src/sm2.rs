@@ -521,6 +521,32 @@ impl SM2 {
         self.key.export_ex(qx, qx_len, qy, qy_len, d, d_len, hex)
     }
 
+    /// Export private component from SM2 key in binary unsigned integer form.
+    ///
+    /// # Parameters
+    ///
+    /// * `d`: Buffer in which to store private component.
+    ///
+    /// # Returns
+    ///
+    /// Returns either Ok(size) containing the number of bytes written to `d`
+    /// or Err(e) containing the wolfSSL library error code value.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// #[cfg(all(random, ecc_export))]
+    /// {
+    /// use wolfssl_wolfcrypt::random::RNG;
+    /// use wolfssl_wolfcrypt::sm2::SM2;
+    ///
+    /// let rng = RNG::new().expect("Failed to create RNG");
+    /// let mut sm2 = SM2::generate(&rng, SM2::FLAG_NONE).expect("Error with generate()");
+    /// let mut d = [0u8; 32];
+    /// let d_size = sm2.export_private(&mut d).expect("Error with export_private()");
+    /// assert_eq!(d_size, 32);
+    /// }
+    /// ```
     #[cfg(ecc_export)]
     pub fn export_private(&mut self, d: &mut [u8]) -> Result<usize, i32> {
         self.key.export_private(d)
