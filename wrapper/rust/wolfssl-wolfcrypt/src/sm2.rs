@@ -857,7 +857,8 @@ impl SM2 {
     /// let mut sm2 = SM2::generate(&rng, SM2::FLAG_NONE, None, None).expect("Error with generate()");
     /// let hash = [0x42u8; 32];
     /// let mut signature = [0u8; 73];
-    /// sm2.sign_hash(&hash, &mut signature, &rng).expect("Error with sign_hash()");
+    /// let signature_len = sm2.sign_hash(&hash, &mut signature, &rng).expect("Error with sign_hash()");
+    /// assert!(signature_len > 0 && signature_len <= signature.len());
     /// }
     /// ```
     #[cfg(all(random, sm2_sign))]
@@ -885,17 +886,39 @@ impl SM2 {
         Ok(signature_len as usize)
     }
 
-    /// Verify a DER-encoded SM2 signature against a hash.
+    /// Verify the SM2 signature of a hash.
     ///
     /// # Parameters
     ///
-    /// * `signature`: DER-encoded SM2 signature to verify.
-    /// * `hash`: Message digest associated with the signature.
+    /// * `signature`: SM2 signature.
+    /// * `hash`: Message digest.
     ///
     /// # Returns
     ///
-    /// Returns either Ok(true) for a valid signature, Ok(false) for an invalid
-    /// signature, or Err(e) containing the wolfSSL library error code value.
+    /// Returns either Ok(valid) containing a flag for whether the signature is
+    /// valid or Err(e) containing the wolfSSL library error code value.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// #[cfg(all(random, sm2_sign, sm2_verify))]
+    /// {
+    /// use wolfssl_wolfcrypt::random::RNG;
+    /// use wolfssl_wolfcrypt::sm2::SM2;
+    ///
+    /// let rng = RNG::new().expect("Failed to create RNG");
+    /// let mut sm2 = SM2::generate(&rng, SM2::FLAG_NONE, None, None).expect("Error with generate()");
+    /// let mut hash = [0x42u8; 32];
+    /// let mut signature = [0u8; 73];
+    /// let signature_len = sm2.sign_hash(&hash, &mut signature, &rng).expect("Error with sign_hash()");
+    /// assert!(signature_len > 0 && signature_len <= signature.len());
+    /// let valid = sm2.verify_hash(&signature[..signature_len], &hash).expect("Error with verify_hash()");
+    /// assert!(valid);
+    /// hash[0] ^= 0x01;
+    /// let valid = sm2.verify_hash(&signature[..signature_len], &hash).expect("Error with verify_hash()");
+    /// assert!(!valid);
+    /// }
+    /// ```
     #[cfg(sm2_verify)]
     pub fn verify_hash(&mut self, signature: &[u8], hash: &[u8]) -> Result<bool, i32> {
         let signature_len = crate::buffer_len_to_u32(signature.len())?;
