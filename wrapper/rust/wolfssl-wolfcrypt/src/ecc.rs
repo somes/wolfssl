@@ -412,6 +412,7 @@ impl ECC {
         })
     }
 
+    /// Get the curve ID for this ECC key from its internal curve index.
     pub(crate) fn curve_id(&self) -> Result<i32, i32> {
         let curve_idx = unsafe { (*self.wc_ecc_key).idx };
         let rc = unsafe { sys::wc_ecc_get_curve_id(curve_idx) };
