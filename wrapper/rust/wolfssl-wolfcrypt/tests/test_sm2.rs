@@ -2,6 +2,7 @@
 
 mod common;
 
+use std::fs;
 #[cfg(all(random, sm2_dh))]
 use std::rc::Rc;
 #[cfg(random)]
@@ -14,7 +15,7 @@ fn test_sm2_set_rng() {
     common::setup();
     let key_gen_rng = RNG::new().expect("Failed to create key generation RNG");
     let blinding_rng = RNG::new().expect("Failed to create blinding RNG");
-    let mut key = SM2::generate(&key_gen_rng, SM2::FLAG_NONE).expect("Error with generate()");
+    let mut key = SM2::generate(&key_gen_rng, SM2::FLAG_NONE, None, None).expect("Error with generate()");
 
     key.set_rng(blinding_rng).expect("Error with set_rng()");
 }
@@ -24,7 +25,7 @@ fn test_sm2_set_rng() {
 fn test_sm2_generate() {
     common::setup();
     let rng = RNG::new().expect("Failed to create RNG");
-    SM2::generate(&rng, SM2::FLAG_NONE).expect("Error with generate()");
+    SM2::generate(&rng, SM2::FLAG_NONE, None, None).expect("Error with generate()");
 }
 
 #[test]
@@ -32,8 +33,8 @@ fn test_sm2_generate() {
 fn test_sm2_shared_secret() {
     common::setup();
     let rng = Rc::new(RNG::new().expect("Failed to create RNG"));
-    let mut alice = SM2::generate(&rng, SM2::FLAG_NONE).expect("Error generating Alice key");
-    let mut bob = SM2::generate(&rng, SM2::FLAG_NONE).expect("Error generating Bob key");
+    let mut alice = SM2::generate(&rng, SM2::FLAG_NONE, None, None).expect("Error generating Alice key");
+    let mut bob = SM2::generate(&rng, SM2::FLAG_NONE, None, None).expect("Error generating Bob key");
     alice
         .set_shared_rng(Rc::clone(&rng))
         .expect("Error with set_shared_rng()");
@@ -60,8 +61,8 @@ fn test_sm2_shared_secret() {
 fn test_sm2_shared_secret_rejects_small_buffer() {
     common::setup();
     let rng = Rc::new(RNG::new().expect("Failed to create RNG"));
-    let mut alice = SM2::generate(&rng, SM2::FLAG_NONE).expect("Error generating Alice key");
-    let mut bob = SM2::generate(&rng, SM2::FLAG_NONE).expect("Error generating Bob key");
+    let mut alice = SM2::generate(&rng, SM2::FLAG_NONE, None, None).expect("Error generating Alice key");
+    let mut bob = SM2::generate(&rng, SM2::FLAG_NONE, None, None).expect("Error generating Bob key");
     alice
         .set_shared_rng(Rc::clone(&rng))
         .expect("Error with set_shared_rng()");
@@ -77,7 +78,7 @@ fn test_sm2_shared_secret_rejects_small_buffer() {
 fn test_sm2_create_digest_with_sm3() {
     common::setup();
     let rng = RNG::new().expect("Failed to create RNG");
-    let mut key = SM2::generate(&rng, SM2::FLAG_NONE).expect("Error generating SM2 key");
+    let mut key = SM2::generate(&rng, SM2::FLAG_NONE, None, None).expect("Error generating SM2 key");
     let mut digest = [0u8; 32];
 
     key.create_digest(
@@ -96,7 +97,7 @@ fn test_sm2_create_digest_with_sm3() {
 fn test_sm2_create_digest_with_sm3_rejects_small_buffer() {
     common::setup();
     let rng = RNG::new().expect("Failed to create RNG");
-    let mut key = SM2::generate(&rng, SM2::FLAG_NONE).expect("Error generating SM2 key");
+    let mut key = SM2::generate(&rng, SM2::FLAG_NONE, None, None).expect("Error generating SM2 key");
     let mut digest = [0u8; 31];
 
     let result = key.create_digest(
@@ -113,7 +114,7 @@ fn test_sm2_create_digest_with_sm3_rejects_small_buffer() {
 fn test_sm2_sign_and_verify_hash() {
     common::setup();
     let rng = RNG::new().expect("Failed to create RNG");
-    let mut key = SM2::generate(&rng, SM2::FLAG_NONE).expect("Error generating SM2 key");
+    let mut key = SM2::generate(&rng, SM2::FLAG_NONE, None, None).expect("Error generating SM2 key");
     let mut digest = [0x42u8; 32];
     let mut signature = [0u8; 80];
 
@@ -139,7 +140,7 @@ fn test_sm2_sign_and_verify_hash() {
 fn test_sm2_sign_hash_rejects_small_buffer() {
     common::setup();
     let rng = RNG::new().expect("Failed to create RNG");
-    let mut key = SM2::generate(&rng, SM2::FLAG_NONE).expect("Error generating SM2 key");
+    let mut key = SM2::generate(&rng, SM2::FLAG_NONE, None, None).expect("Error generating SM2 key");
     let digest = [0x42u8; 32];
     let mut signature = [0u8; 1];
 
@@ -151,7 +152,7 @@ fn test_sm2_sign_hash_rejects_small_buffer() {
 fn test_sm2_sign_and_verify_with_sm3_digest() {
     common::setup();
     let rng = RNG::new().expect("Failed to create RNG");
-    let mut key = SM2::generate(&rng, SM2::FLAG_NONE).expect("Error generating SM2 key");
+    let mut key = SM2::generate(&rng, SM2::FLAG_NONE, None, None).expect("Error generating SM2 key");
     let mut digest = [0u8; 32];
     key.create_digest(
         SM2::CERT_SIG_ID,
@@ -177,4 +178,25 @@ fn test_sm2_sign_and_verify_with_sm3_digest() {
         .verify_hash(&signature[..signature_len], &digest)
         .expect("Error verifying modified SM2 digest");
     assert!(!valid);
+}
+
+#[test]
+fn test_sm2_import_export_sign_verify() {
+    common::setup();
+
+    let mut rng = RNG::new().expect("Failed to create RNG");
+    let key_path = "../../../certs/sm2/client-sm2-priv.der";
+    let der: Vec<u8> = fs::read(key_path).expect("Error reading key file");
+    let mut sm2 = SM2::import_der(&der, None, None).expect("Error with import_der()");
+    let hash = [0x42u8; 32];
+    let mut signature = [0u8; 73];
+    let signature_length = sm2.sign_hash(&hash, &mut signature, &mut rng).expect("Error with sign_hash()");
+    assert!(signature_length > 0 && signature_length <= signature.len());
+
+    let signature = &mut signature[0..signature_length];
+    let key_path = "../../../certs/sm2/client-sm2-key.der";
+    let der: Vec<u8> = fs::read(key_path).expect("Error reading key file");
+    let mut sm2 = SM2::import_public_der(&der, None, None).expect("Error with import_public_der()");
+    let valid = sm2.verify_hash(&signature, &hash).expect("Error with verify_hash()");
+    assert_eq!(valid, true);
 }
