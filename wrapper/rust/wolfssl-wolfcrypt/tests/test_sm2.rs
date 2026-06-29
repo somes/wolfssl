@@ -12,7 +12,8 @@ use wolfssl_wolfcrypt::sm2::SM2;
 #[cfg(any(
     all(random, ecc_import, ecc_export, sm2_sign, sm2_verify),
     all(random, sm2_dh),
-    ecc_import
+    ecc_import,
+    all(random, sm2_digest, sm3)
 ))]
 use wolfssl_wolfcrypt::sys;
 
@@ -378,14 +379,14 @@ fn test_sm2_create_digest_with_sm3() {
     .expect("Error with create_digest()");
     assert_ne!(digest, [0u8; 32]);
 
-    let mut digest2 = [0u8; 31];
-    let is_err = key
-        .create_digest(
+    let mut too_small_buffer = [0u8; 31];
+    assert_eq!(
+        key.create_digest(
             SM2::CERT_SIG_ID,
             b"message digest",
             SM2::HASH_TYPE_SM3,
-            &mut digest2,
-        )
-        .is_err();
-    assert_eq!(is_err, true);
+            &mut too_small_buffer,
+        ),
+        Err(sys::wolfCrypt_ErrorCodes_BUFFER_E)
+    )
 }
